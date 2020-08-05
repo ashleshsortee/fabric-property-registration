@@ -1,0 +1,325 @@
+version: "2"
+
+volumes:
+  orderer.property-registration-network.com:
+  peer0.registrar.property-registration-network.com:
+  peer1.registrar.property-registration-network.com:
+  peer0.users.property-registration-network.com:
+  peer1.users.property-registration-network.com:
+  peer2.users.property-registration-network.com:
+
+networks:
+  registration:
+
+services:
+  ca.registrar.property-registration-network.com:
+    image: hyperledger/fabric-ca:latest
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca.registrar.property-registration-network.com
+      - FABRIC_CA_SERVER_TLS_ENABLED=false
+      # - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.registrar.property-registration-network.com-cert.pem
+      # - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/754fccf4ad3f6a483161cf597b79fbdbdadaf1ee2f024e79da8c8e9b8bfb6dcb_sk
+    ports:
+      - "7054:7054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d' # --ca.certfile /etc/hyperledger/fabric-ca-server-config/ca.registrar.property-registration-network.com-cert.pem --ca.keyfile /etc/hyperledger/fabric-ca-server-config/754fccf4ad3f6a483161cf597b79fbdbdadaf1ee2f024e79da8c8e9b8bfb6dcb_sk
+    volumes:
+      - ./crypto-config/peerOrganizations/registrar.property-registration-network.com/ca/:/etc/hyperledger/fabric-ca-server-config
+    container_name: ca.registrar.property-registration-network.com
+    networks:
+      - registration
+
+  ca.users.property-registration-network.com:
+    image: hyperledger/fabric-ca:latest
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca.users.property-registration-network.com
+      - FABRIC_CA_SERVER_TLS_ENABLED=false
+      # - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.users.property-registration-network.com-cert.pem
+      # - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/69f46c1ef51a71ee0aaadc9cef23aef7b44df2b1e84dad62484980170c01aa22_sk
+    ports:
+      - "8054:7054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d' # --ca.certfile /etc/hyperledger/fabric-ca-server-config/ca.users.property-registration-network.com-cert.pem --ca.keyfile /etc/hyperledger/fabric-ca-server-config/69f46c1ef51a71ee0aaadc9cef23aef7b44df2b1e84dad62484980170c01aa22_sk
+    volumes:
+      - ./crypto-config/peerOrganizations/users.property-registration-network.com/ca/:/etc/hyperledger/fabric-ca-server-config
+    container_name: ca.users.property-registration-network.com
+    networks:
+      - registration
+
+  orderer.property-registration-network.com:
+    extends:
+      file: docker-base/docker-compose-base.yaml
+      service: orderer.property-registration-network.com
+    container_name: orderer.property-registration-network.com
+    networks:
+      - registration
+
+  peer0.registrar.property-registration-network.com:
+    container_name: peer0.registrar.property-registration-network.com
+    extends:
+      file: docker-base/docker-compose-base.yaml
+      service: peer0.registrar.property-registration-network.com
+    networks:
+      - registration
+
+  peer1.registrar.property-registration-network.com:
+    container_name: peer1.registrar.property-registration-network.com
+    extends:
+      file: docker-base/docker-compose-base.yaml
+      service: peer1.registrar.property-registration-network.com
+    networks:
+      - registration
+
+  peer0.users.property-registration-network.com:
+    container_name: peer0.users.property-registration-network.com
+    extends:
+      file: docker-base/docker-compose-base.yaml
+      service: peer0.users.property-registration-network.com
+    networks:
+      - registration
+
+  peer1.users.property-registration-network.com:
+    container_name: peer1.users.property-registration-network.com
+    extends:
+      file: docker-base/docker-compose-base.yaml
+      service: peer1.users.property-registration-network.com
+    networks:
+      - registration
+
+  peer2.users.property-registration-network.com:
+    container_name: peer2.users.property-registration-network.com
+    extends:
+      file: docker-base/docker-compose-base.yaml
+      service: peer2.users.property-registration-network.com
+    networks:
+      - registration
+
+  cli:
+    container_name: cli
+    image: hyperledger/fabric-tools:latest
+    tty: true
+    stdin_open: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_ID=cli
+      - CORE_PEER_ADDRESS=peer0.registrar.property-registration-network.com:7051
+      - CORE_PEER_LOCALMSPID=registrarMSP
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/registrar.property-registration-network.com/peers/peer0.registrar.property-registration-network.com/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/registrar.property-registration-network.com/peers/peer0.registrar.property-registration-network.com/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/registrar.property-registration-network.com/peers/peer0.registrar.property-registration-network.com/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/registrar.property-registration-network.com/users/Admin@registrar.property-registration-network.com/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+      - /var/run/:/host/var/run/
+      - ./../chaincode/:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode/
+      - ./../chaincode-advanced/:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode-advanced/
+      - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+      - ./scripts:/opt/gopath/src/github.com/hyperledger/fabric/peer/scripts/
+      - ./channel-artifacts:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts
+    depends_on:
+      - ca.registrar.property-registration-network.com
+      - ca.users.property-registration-network.com
+      - orderer.property-registration-network.com
+      - peer0.registrar.property-registration-network.com
+      - peer1.registrar.property-registration-network.com
+      - peer0.users.property-registration-network.com
+      - peer1.users.property-registration-network.com
+      - peer2.users.property-registration-network.com
+    networks:
+      - registration
+
+  # user.cli:
+  #   container_name: user.cli
+  #   image: hyperledger/fabric-tools:latest
+  #   tty: true
+  #   stdin_open: true
+  #   environment:
+  #     - GOPATH=/opt/gopath
+  #     - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+  #     - FABRIC_LOGGING_SPEC=INFO
+  #     - CORE_PEER_ID=user.cli
+  #     - CORE_PEER_ADDRESS=peer0.users.property-registration-network.com:9051
+  #     - CORE_PEER_LOCALMSPID=usersMSP
+  #     - CORE_PEER_TLS_ENABLED=false
+  #     - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/users.property-registration-network.com/peers/peer0.users.property-registration-network.com/tls/server.crt
+  #     - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/users.property-registration-network.com/peers/peer0.users.property-registration-network.com/tls/server.key
+  #     - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/users.property-registration-network.com/peers/peer0.users.property-registration-network.com/tls/ca.crt
+  #     - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/users.property-registration-network.com/users/Admin@users.property-registration-network.com/msp
+  #   working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+  #   command: /bin/bash
+  #   volumes:
+  #     - /var/run/:/host/var/run/
+  #     - ./../chaincode/:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode/
+  #     - ./../chaincode-advanced/:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode-advanced/
+  #     - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+  #     - ./scripts:/opt/gopath/src/github.com/hyperledger/fabric/peer/scripts/
+  #     - ./channel-artifacts:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts
+  #   depends_on:
+  #     - ca.registrar.property-registration-network.com
+  #     - ca.users.property-registration-network.com
+  #     - orderer.property-registration-network.com
+  #     - peer0.registrar.property-registration-network.com
+  #     - peer1.registrar.property-registration-network.com
+  #     - peer0.users.property-registration-network.com
+  #     - peer1.users.property-registration-network.com
+  #     - peer2.users.property-registration-network.com
+  #   networks:
+  #     - registration
+
+  # chaincode:
+  #   container_name: chaincode
+  #   image: hyperledger/fabric-ccenv:latest
+  #   tty: true
+  #   environment:
+  #     - GOPATH=/opt/gopath
+  #     - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+  #     - FABRIC_LOGGING_SPEC=INFO
+  #     - CORE_PEER_ID=chaincode
+  #     - CORE_PEER_ADDRESS=peer0.registrar.property-registration-network.com:7051
+  #     - CORE_PEER_LOCALMSPID=registrarMSP
+  #     - CORE_PEER_TLS_ENABLED=false
+  #     - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/crypto/peerOrganizations/registrar.property-registration-network.com/users/Admin@registrar.property-registration-network.com/msp
+  #     - CORE_TLS_CLIENT_KEY_PATH=/opt/gopath/src/crypto/peerOrganizations/registrar.property-registration-network.com/users/Admin@registrar.property-registration-network.com/tls/client.key
+  #     - CORE_TLS_CLIENT_CERT_PATH=/opt/gopath/src/crypto/peerOrganizations/registrar.property-registration-network.com/users/Admin@registrar.property-registration-network.com/tls/client.crt
+  #     - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/crypto/peerOrganizations/registrar.property-registration-network.com/users/Admin@registrar.property-registration-network.com/tls/ca.crt
+  #   working_dir: /opt/gopath/src/chaincode
+  #   command: /bin/bash -c 'sleep 6000000'
+  #   volumes:
+  #     - /var/run/:/host/var/run/
+  #     - ./../chaincode:/opt/gopath/src/chaincode
+  #     - ./../chaincode-advanced:/opt/gopath/src/chaincode-advanced
+  #     - ./crypto-config:/opt/gopath/src/crypto
+  #   networks:
+  #     - registration
+
+  # registrar.cli:
+  #   container_name: registrar.cli
+  #   image: hyperledger/fabric-tools:latest
+  #   tty: true
+  #   stdin_open: true
+  #   environment:
+  #     - GOPATH=/opt/gopath
+  #     - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+  #     - FABRIC_LOGGING_SPEC=INFO
+  #     - CORE_PEER_ID=registrar.cli
+  #     - CORE_PEER_ADDRESS=peer0.registrar.property-registration-network.com:7051
+  #     - CORE_PEER_LOCALMSPID=registrarMSP
+  #     - CORE_PEER_TLS_ENABLED=false
+  #     - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/registrar.property-registration-network.com/peers/peer0.registrar.property-registration-network.com/tls/server.crt
+  #     - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/registrar.property-registration-network.com/peers/peer0.registrar.property-registration-network.com/tls/server.key
+  #     - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/registrar.property-registration-network.com/peers/peer0.registrar.property-registration-network.com/tls/ca.crt
+  #     - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/registrar.property-registration-network.com/users/Admin@registrar.property-registration-network.com/msp
+  #   working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+  #   command: /bin/bash
+  #   volumes:
+  #     - /var/run/:/host/var/run/
+  #     - ./../chaincode/:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode/
+  #     - ./../chaincode-advanced/:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode-advanced/
+  #     - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+  #     - ./scripts:/opt/gopath/src/github.com/hyperledger/fabric/peer/scripts/
+  #     - ./channel-artifacts:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts
+  #   depends_on:
+  #     - ca.registrar.property-registration-network.com
+  #     - ca.users.property-registration-network.com
+  #     - orderer.property-registration-network.com
+  #     - peer0.registrar.property-registration-network.com
+  #     - peer1.registrar.property-registration-network.com
+  #     - peer0.users.property-registration-network.com
+  #     - peer1.users.property-registration-network.com
+  #     - peer2.users.property-registration-network.com
+  #   networks:
+  #     - registration
+
+  user.cli:
+    container_name: user.cli
+    image: hyperledger/fabric-tools:latest
+    tty: true
+    stdin_open: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_ID=user.cli
+      - CORE_PEER_ADDRESS=peer0.users.property-registration-network.com:9051
+      - CORE_PEER_LOCALMSPID=usersMSP
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/users.property-registration-network.com/peers/peer0.users.property-registration-network.com/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/users.property-registration-network.com/peers/peer0.users.property-registration-network.com/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/users.property-registration-network.com/peers/peer0.users.property-registration-network.com/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/users.property-registration-network.com/users/Admin@users.property-registration-network.com/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+      - /var/run/:/host/var/run/
+      - ./../chaincode/:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode/
+      - ./../chaincode-advanced/:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode-advanced/
+      - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+      - ./scripts:/opt/gopath/src/github.com/hyperledger/fabric/peer/scripts/
+      - ./channel-artifacts:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts
+    depends_on:
+      - ca.registrar.property-registration-network.com
+      - ca.users.property-registration-network.com
+      - orderer.property-registration-network.com
+      - peer0.registrar.property-registration-network.com
+      - peer1.registrar.property-registration-network.com
+      - peer0.users.property-registration-network.com
+      - peer1.users.property-registration-network.com
+      - peer2.users.property-registration-network.com
+    networks:
+      - registration
+
+  registrar.chaincode:
+    container_name: registrar.chaincode
+    image: hyperledger/fabric-ccenv:latest
+    tty: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_ID=registrar.chaincode
+      - CORE_PEER_ADDRESS=peer0.registrar.property-registration-network.com:7051
+      - CORE_PEER_LOCALMSPID=registrarMSP
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/crypto/peerOrganizations/registrar.property-registration-network.com/users/Admin@registrar.property-registration-network.com/msp
+      - CORE_TLS_CLIENT_KEY_PATH=/opt/gopath/src/crypto/peerOrganizations/registrar.property-registration-network.com/users/Admin@registrar.property-registration-network.com/tls/client.key
+      - CORE_TLS_CLIENT_CERT_PATH=/opt/gopath/src/crypto/peerOrganizations/registrar.property-registration-network.com/users/Admin@registrar.property-registration-network.com/tls/client.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/crypto/peerOrganizations/registrar.property-registration-network.com/users/Admin@registrar.property-registration-network.com/tls/ca.crt
+    working_dir: /opt/gopath/src/chaincode
+    command: /bin/bash -c 'sleep 6000000'
+    volumes:
+      - /var/run/:/host/var/run/
+      - ./../chaincode:/opt/gopath/src/chaincode
+      - ./../chaincode-advanced:/opt/gopath/src/chaincode-advanced
+      - ./crypto-config:/opt/gopath/src/crypto
+    networks:
+      - registration
+
+  user.chaincode:
+    container_name: user.chaincode
+    image: hyperledger/fabric-ccenv:latest
+    tty: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_ID=user.chaincode
+      - CORE_PEER_ADDRESS=peer0.users.property-registration-network.com:9051
+      - CORE_PEER_LOCALMSPID=usersMSP
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/crypto/peerOrganizations/users.property-registration-network.com/users/Admin@users.property-registration-network.com/msp
+      - CORE_TLS_CLIENT_KEY_PATH=/opt/gopath/src/crypto/peerOrganizations/users.property-registration-network.com/users/Admin@users.property-registration-network.com/tls/client.key
+      - CORE_TLS_CLIENT_CERT_PATH=/opt/gopath/src/crypto/peerOrganizations/users.property-registration-network.com/users/Admin@users.property-registration-network.com/tls/client.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/crypto/peerOrganizations/users.property-registration-network.com/users/Admin@users.property-registration-network.com/tls/ca.crt
+    working_dir: /opt/gopath/src/chaincode
+    command: /bin/bash -c 'sleep 6000000'
+    volumes:
+      - /var/run/:/host/var/run/
+      - ./../chaincode:/opt/gopath/src/chaincode
+      - ./../chaincode-advanced:/opt/gopath/src/chaincode-advanced
+      - ./crypto-config:/opt/gopath/src/crypto
+    networks:
+      - registration

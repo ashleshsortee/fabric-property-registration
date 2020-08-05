@@ -1,0 +1,156 @@
+Organizations:
+  - &OrdererOrg
+    Name: Orderer
+    ID: OrdererMSP
+    MSPDir: crypto-config/ordererOrganizations/property-registration-network.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+
+  - &registrar
+    Name: registrarMSP
+    ID: registrarMSP
+    MSPDir: crypto-config/peerOrganizations/registrar.property-registration-network.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('registrarMSP.admin', 'registrarMSP.peer', 'registrarMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('registrarMSP.admin', 'registrarMSP.peer', 'registrarMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('registrarMSP.admin', 'registrarMSP.peer', 'registrarMSP.client')"
+    AnchorPeers:
+      - Host: peer0.registrar.property-registration-network.com
+        Port: 7051
+
+  - &users
+    Name: usersMSP
+    ID: usersMSP
+    MSPDir: crypto-config/peerOrganizations/users.property-registration-network.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('usersMSP.admin', 'usersMSP.peer', 'usersMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('usersMSP.admin', 'usersMSP.peer', 'usersMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('usersMSP.admin', 'usersMSP.peer', 'usersMSP.client')"
+    AnchorPeers:
+      - Host: peer0.users.property-registration-network.com
+        Port: 9051
+
+#Capabilities
+
+Capabilities:
+  Channel: &ChannelCapabilities
+    V1_4_3: true
+    V1_3: false
+    V1_1: false
+  Orderer: &OrdererCapabilities
+    V1_4_2: true
+    V1_1: false
+  Application: &ApplicationCapabilities
+    V1_4_2: true
+    V1_3: false
+    V1_2: false
+    V1_1: false
+
+#Application
+
+Application: &ApplicationDefaults
+  Organizations:
+  Policies: &ApplicationDefaultPolicies
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "ANY Admins"
+  Capabilities: *ApplicationCapabilities
+
+#Orderer
+Orderer: &OrdererDefaults
+  OrdererType: solo
+  Addresses:
+    - orderer.property-registration-network.com:7050
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Organizations:
+  Capabilities: *OrdererCapabilities
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "ANY Admins"
+    # BlockValidation specifies what signatures must be included in the block
+    # from the orderer for the peer to validate it.
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+
+Channel: &ChannelDefaults
+  Policies:
+    # Who may invoke the 'Deliver' API
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    # Who may invoke the 'Broadcast' API
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    # By default, who may modify elements at this config level
+    Admins:
+      Type: ImplicitMeta
+      Rule: "ANY Admins"
+  Capabilities:
+    <<: *ChannelCapabilities
+
+#Profiles
+Profiles:
+  OrdererGenesis:
+    <<: *ChannelDefaults
+    Capabilities:
+      <<: *ChannelCapabilities
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *OrdererOrg
+      Capabilities:
+        <<: *OrdererCapabilities
+    Consortiums:
+      RegistrationConsortium:
+        Organizations:
+          - *registrar
+          - *users
+
+  RegistrationChannel:
+    Consortium: RegistrationConsortium
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *users
+        - *registrar
+      Capabilities:
+        <<: *ApplicationCapabilities
