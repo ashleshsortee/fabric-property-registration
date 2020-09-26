@@ -1,2 +1,5 @@
 **/channel-artifacts/
 **/crypto-config/
+.DS_Store
+**/node_modules/
+/chaincode/package-lock.json

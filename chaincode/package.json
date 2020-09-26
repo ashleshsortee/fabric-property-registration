@@ -1,0 +1,19 @@
+{
+  "name": "fabric-property-registration",
+  "version": "1.0.0",
+  "description": "Hyperledger Fabric Property Registration",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start-dev-registrar": "fabric-chaincode-node start --peer.address peer0.registrar.property-registration-network.com:7053 --chaincode-id-name regnet:1.1",
+    "start-dev-user": "fabric-chaincode-node start --peer.address peer0.users.property-registration-network.com:9053 --chaincode-id-name regnet:1.1",
+    "start": "fabric-chaincode-node start"
+  },
+  "author": "Ashlesh Sortee",
+  "license": "ISC",
+  "dependencies": {
+    "bytebuffer": "5.0.1",
+    "fabric-contract-api": "~1.4.2",
+    "fabric-shim": "~1.4.2"
+  }
+}
